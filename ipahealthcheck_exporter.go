@@ -20,11 +20,10 @@ import (
 var (
 	metricsPath        string
 	ipahealthcheckPath string
-	waitSeconds        int
 	port               int
 
 	ipahealthcheckStateDesc = prometheus.NewDesc(
-		"ipa_healthcheck_result",
+		"ipa_healthcheck_state",
 		"State of a IPA healthcheck (1: active, 0: inactive)",
 		[]string{"uuid", "severity", "check"}, nil,
 	)
@@ -44,9 +43,8 @@ type ipahealthcheckCollector struct {
 }
 
 func init() {
-	flag.StringVar(&metricsPath, "metrics-path", "/metrics", "Path under which to expose metrics.")
+	flag.StringVar(&metricsPath, "metrics-path", "/metrics", "Path under which to expose the metrics.")
 	flag.StringVar(&ipahealthcheckPath, "ipahealthcheck-path", "/usr/bin/ipa-healthcheck", "Path to the ipa-healthcheck tool.")
-	flag.IntVar(&waitSeconds, "wait", 30, "time (in seconds) between each call to the ipa-healthcheck tool")
 	flag.IntVar(&port, "port", 9888, "Port on which to expose metrics.")
 }
 
