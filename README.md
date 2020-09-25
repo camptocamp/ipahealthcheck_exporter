@@ -5,7 +5,7 @@ Prometheus exporter for exposing ipa-healthcheck metrics. It's essentialliy a wr
 
 ## Prerequisites
 
- * Freeipa 4.8.0 ate least, since this exporter uses the tool ["freeipa-healthcheck"](https://github.com/freeipa/freeipa-healthcheck).
+ * Freeipa 4.8.0 at least, since this exporter uses the tool ["freeipa-healthcheck"](https://github.com/freeipa/freeipa-healthcheck).
 
 ## Running
 
