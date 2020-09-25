@@ -1,19 +1,40 @@
-# ipahealthcheck-exporter
+# ipahealthcheck_exporter
 
 Prometheus exporter for exposing ipa-healthcheck metrics. It's essentialliy a wrapper around the ipa-healthcheck command.
 
 
-## Prerequisites :
+## Prerequisites
 
- * Freeipa 4.8.0 ate least, since this exporter uses the tool ["node_exporter"](https://github.com/freeipa/freeipa-healthcheck).
+ * Freeipa 4.8.0 ate least, since this exporter uses the tool ["freeipa-healthcheck"](https://github.com/freeipa/freeipa-healthcheck).
 
-## Running :
+## Running
 
 You can run the exporter locally :
 
 ```sh
 # ./ipa-healthcheck_exporter 
-INFO[0000] ipa-healthcheck exporter listening on http://0.0.0.0:9888  source="ipahealthcheck-exporter.go:139"
+INFO[0000] ipa-healthcheck exporter listening on http://0.0.0.0:9888  source="ipahealthcheck_exporter.go:139"
+```
+
+Or with a systemd service :
+
+```
+[Unit]
+Description=Prometheus ipahealthcheck_exporter
+Wants=basic.target
+After=basic.target network.target
+
+[Service]
+User=ipahealthcheck-exporter
+Group=ipahealthcheck-exporter
+ExecStart=/usr/local/bin/ipahealthcheck_exporter
+
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 The following arguments are supported :
@@ -36,8 +57,10 @@ Usage of ./ipa-healthcheck_exporter:
 | `ipa_healthcheck_state`                             | State of a IPA healthcheck (1: active, 0: inactive)"                            |
 
 
+## Prometheus
+
+### Alerting :
 
 ## Misc
 
 We currently have to use the --output-file option of the ipa-healthcheck command and a temp file to parse the checks otherwise some warnings are written on stdout alongside the json output.
-
