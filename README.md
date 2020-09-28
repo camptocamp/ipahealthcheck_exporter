@@ -59,8 +59,20 @@ Usage of ./ipa-healthcheck_exporter:
 
 ## Prometheus
 
-### Alerting :
+### Labels
+
+The exporter labels are the following :
+ * uuid : Uuid of the check returned by the ipa-healthcheck command
+ * severity : Severity of the check ("success", "critical", "error", "warning)
+ * source : Source (plugin / list of checks) of the check
+ * check : Name of the check
 
 ## Misc
+
+When a check is in error you can rerun it on the server to have more informations about the problem with the following command :
+
+```sh
+# ipa-healthcheck --source <label "source"> --check <label "check">
+```
 
 We currently have to use the --output-file option of the ipa-healthcheck command and a temp file to parse the checks otherwise some warnings are written on stdout alongside the json output.
