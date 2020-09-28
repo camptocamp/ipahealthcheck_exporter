@@ -67,6 +67,22 @@ The exporter labels are the following :
  * source : Source (plugin / list of checks) of the check
  * check : Name of the check
 
+### Alerts
+
+### Alerting rules
+
+Here are an example of two alerting rules to receive alerts when a check is in a bad state :
+
+```
+alert: IPAHealthcheckIsCritical
+expr: ipa_healthcheck_state{severity="critical"} == 1
+for: 5m
+labels:
+  severity: critical
+annotations:
+  description: "A IPA healthcheck is in critical state : {{ $labels.source }} {{ $labels.check }}"
+```
+
 ## Misc
 
 When a check is in error you can rerun it on the server to have more informations about the problem with the following command :
