@@ -80,7 +80,14 @@ for: 5m
 labels:
   severity: critical
 annotations:
-  description: "A IPA healthcheck is in critical state : {{ $labels.source }} {{ $labels.check }}"
+  description: "A IPA healthcheck is in critical state ( {{ $labels.source }} / {{ $labels.check }} )"
+alert: IPAHealthcheckIsError
+expr: ipa_healthcheck_state{severity="error"} == 1
+for: 5m
+labels:
+  severity: error
+annotations:
+  description: A IPA healthcheck is in error state : ( {{ $labels.source }} / {{ $labels.check }} )" 
 ```
 
 ## Misc
