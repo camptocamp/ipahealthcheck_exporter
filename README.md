@@ -1,6 +1,6 @@
 # ipahealthcheck_exporter
 
-Prometheus exporter for exposing ipa-healthcheck metrics. It's essentialliy a wrapper around the ipa-healthcheck command.
+Prometheus exporter for exposing ipa-healthcheck metrics. It's essentially a wrapper around the ipa-healthcheck command.
 
 
 ## Prerequisites
