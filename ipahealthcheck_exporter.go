@@ -58,9 +58,9 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	var checks []ipaCheck
 	severityLevels := []string{"SUCCESS", "CRITICAL", "ERROR", "WARNING"}
 	tmpFile, err := ioutil.TempFile("/dev/shm", "ipa-healthcheck.out")
-   if err != nil {
-     log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
-   }
+	if err != nil {
+		log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
+	}
 
 	err = exec.Command(ic.ipahealthcheckPath, "--output-file", tmpFile.Name()).Run()
 	if err != nil {
@@ -135,9 +135,9 @@ func main() {
 	            <p><a href='` + metricsPath + `'>Metrics</a></p>
 	            </body>
 	            </html>`))
-     if err != nil {
-       log.Infof("An error occured: %v" ,err)
-     }
+		if err != nil {
+			log.Infof("An error occured while writing http response: %v", err)
+		}
 	})
 
 	log.Infof("ipa-healthcheck exporter listening on http://0.0.0.0:%d\n", port)
