@@ -33,7 +33,7 @@ type ipaCheck struct {
 	Source   string
 	Check    string
 	Result   string
-	Uuid     string
+	UUID     string
 	When     string
 	Duration string
 }
@@ -58,10 +58,13 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	var checks []ipaCheck
 	severityLevels := []string{"SUCCESS", "CRITICAL", "ERROR", "WARNING"}
 	tmpFile, err := ioutil.TempFile("/dev/shm", "ipa-healthcheck.out")
+   if err != nil {
+     log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
+   }
 
 	err = exec.Command(ic.ipahealthcheckPath, "--output-file", tmpFile.Name()).Run()
 	if err != nil {
-		log.Infof("ipa-healthcheck tool returned errors: ", err)
+		log.Infof("ipa-healthcheck tool returned errors: %v", err)
 	}
 
 	jsonChecksOutput, err := ioutil.ReadFile(tmpFile.Name())
@@ -80,9 +83,9 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 		for _, level := range severityLevels {
 
 			if level == check.Result {
-				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 1.0, check.Uuid, strings.ToLower(level), check.Source, check.Check)
+				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 1.0, check.UUID, strings.ToLower(level), check.Source, check.Check)
 			} else {
-				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 0.0, check.Uuid, strings.ToLower(level), check.Source, check.Check)
+				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 0.0, check.UUID, strings.ToLower(level), check.Source, check.Check)
 
 			}
 		}
@@ -94,8 +97,8 @@ func main() {
 	flag.Parse()
 
 	go func() {
-		intChan := make(chan os.Signal)
-		termChan := make(chan os.Signal)
+		intChan := make(chan os.Signal, 1)
+		termChan := make(chan os.Signal, 1)
 
 		signal.Notify(intChan, syscall.SIGINT)
 		signal.Notify(termChan, syscall.SIGTERM)
@@ -125,13 +128,16 @@ func main() {
 	http.Handle(metricsPath, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
+		_, err := w.Write([]byte(`<html>
 	            <head><title>IPA Healthcheck Exporter</title></head>
 	            <body>
 	            <h1>IPA Healthcheck Exporter</h1>
 	            <p><a href='` + metricsPath + `'>Metrics</a></p>
 	            </body>
 	            </html>`))
+     if err != nil {
+       log.Infof("An error occured: %v" ,err)
+     }
 	})
 
 	log.Infof("ipa-healthcheck exporter listening on http://0.0.0.0:%d\n", port)
