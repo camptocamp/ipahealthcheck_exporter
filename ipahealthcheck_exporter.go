@@ -25,7 +25,7 @@ var (
 	ipahealthcheckStateDesc = prometheus.NewDesc(
 		"ipa_healthcheck_state",
 		"State of a IPA healthcheck (1: active, 0: inactive)",
-		[]string{"uuid", "severity", "source", "check"}, nil,
+		[]string{"severity", "source", "check"}, nil,
 	)
 )
 
@@ -33,7 +33,6 @@ type ipaCheck struct {
 	Source   string
 	Check    string
 	Result   string
-	UUID     string
 	When     string
 	Duration string
 }
@@ -83,9 +82,9 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 		for _, level := range severityLevels {
 
 			if level == check.Result {
-				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 1.0, check.UUID, strings.ToLower(level), check.Source, check.Check)
+				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 1.0, strings.ToLower(level), check.Source, check.Check)
 			} else {
-				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 0.0, check.UUID, strings.ToLower(level), check.Source, check.Check)
+				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 0.0, strings.ToLower(level), check.Source, check.Check)
 
 			}
 		}

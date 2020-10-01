@@ -62,7 +62,6 @@ Usage of ./ipa-healthcheck_exporter:
 ### Labels
 
 The exporter labels are the following :
- * uuid : Uuid of the check returned by the ipa-healthcheck command
  * severity : Severity of the check ("success", "critical", "error", "warning)
  * source : Source (plugin / list of checks) of the check
  * check : Name of the check
