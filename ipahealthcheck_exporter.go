@@ -9,8 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"strings"
 	"syscall"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -22,19 +22,56 @@ var (
 	ipahealthcheckPath string
 	port               int
 
-	ipahealthcheckStateDesc = prometheus.NewDesc(
-		"ipa_healthcheck_state",
-		"State of a IPA healthcheck (1: active, 0: inactive)",
-		[]string{"severity", "source", "check"}, nil,
+	ipahealthcheckServiceStateDesc = prometheus.NewDesc(
+		"ipa_service_state",
+		"State of the services monitored by IPA healthcheck (1: running, 0: not running)",
+		[]string{"service"}, nil,
 	)
+
+	ipahealthcheckDogtagCheckDesc = prometheus.NewDesc(
+		"ipa_dogtag_connectivity_check",
+		"Check to verify dogtag basic connectivity. (1: success, 0: error)",
+		[]string{"ipahealthcheck"}, nil,
+	)
+
+	ipahealthcheckReplicationCheckDesc = prometheus.NewDesc(
+		"ipa_replication_check",
+		"Replication checks (1: success, 0: error)",
+		[]string{"ipahealthcheck"}, nil,
+	)
+
+	ipahealthcheckCertExpirationDesc = prometheus.NewDesc(
+		"ipa_cert_expiration",
+		"Expiration date of the certificates in warning state (unix timestamp)",
+		[]string{"certificate_request_id"}, nil,
+	)
+
+	scrapedChecks = map[string]scrapedCheck{
+		"ipahealthcheck.meta.services": {
+			scrape:      true,
+			metricsDesc: ipahealthcheckServiceStateDesc,
+		},
+		"ipahealthcheck.ds.replication": {
+			scrape:      true,
+			metricsDesc: ipahealthcheckReplicationCheckDesc,
+		},
+		"DogtagCertsConnectivityCheck": {
+			scrape:      true,
+			metricsDesc: ipahealthcheckDogtagCheckDesc,
+		},
+	}
 )
 
 type ipaCheck struct {
-	Source   string
-	Check    string
-	Result   string
-	When     string
-	Duration string
+	Source string
+	Check  string
+	Result string
+	Kw     map[string]interface{}
+}
+
+type scrapedCheck struct {
+	scrape      bool
+	metricsDesc *prometheus.Desc
 }
 
 type ipahealthcheckCollector struct {
@@ -48,14 +85,16 @@ func init() {
 }
 
 func (ic ipahealthcheckCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- ipahealthcheckStateDesc
+	ch <- ipahealthcheckServiceStateDesc
+	ch <- ipahealthcheckDogtagCheckDesc
+	ch <- ipahealthcheckReplicationCheckDesc
+	ch <- ipahealthcheckCertExpirationDesc
 }
 
 func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Infof("Scraping metrics from %v", ic.ipahealthcheckPath)
 
 	var checks []ipaCheck
-	severityLevels := []string{"SUCCESS", "CRITICAL", "ERROR", "WARNING"}
 	tmpFile, err := ioutil.TempFile("/dev/shm", "ipa-healthcheck.out")
 	if err != nil {
 		log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
@@ -79,16 +118,41 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, check := range checks {
 
-		for _, level := range severityLevels {
+		if scrapedChecks[check.Source].scrape {
 
-			if level == check.Result {
-				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 1.0, strings.ToLower(level), check.Source, check.Check)
+			if check.Result == "SUCCESS" {
+				ch <- prometheus.MustNewConstMetric(scrapedChecks[check.Source].metricsDesc, prometheus.GaugeValue, 1.0, check.Check)
 			} else {
-				ch <- prometheus.MustNewConstMetric(ipahealthcheckStateDesc, prometheus.GaugeValue, 0.0, strings.ToLower(level), check.Source, check.Check)
-
+				ch <- prometheus.MustNewConstMetric(scrapedChecks[check.Source].metricsDesc, prometheus.GaugeValue, 0.0, check.Check)
 			}
 		}
+
+		if scrapedChecks[check.Check].scrape {
+
+			if check.Result == "SUCCESS" {
+				ch <- prometheus.MustNewConstMetric(scrapedChecks[check.Check].metricsDesc, prometheus.GaugeValue, 1.0, check.Check)
+			} else {
+				ch <- prometheus.MustNewConstMetric(scrapedChecks[check.Check].metricsDesc, prometheus.GaugeValue, 0.0, check.Check)
+			}
+		}
+
+		if check.Source == "ipahealthcheck.ipa.certs" && check.Check == "IPACertmongerExpirationCheck" {
+
+			if check.Result == "WARNING" {
+
+				timestamp, err := time.Parse("20060102150405Z", check.Kw["expiration_date"].(string))
+
+				if err != nil {
+					log.Infof("A problem occured while getting the certificate expiration (request id : %v) : %v", check.Kw["key"].(string), err)
+				} else {
+					ch <- prometheus.MustNewConstMetric(ipahealthcheckCertExpirationDesc, prometheus.GaugeValue, float64(timestamp.Unix()), check.Kw["key"].(string))
+				}
+			}
+		}
+
 	}
+
+	defer os.Remove(tmpFile.Name())
 }
 
 func main() {

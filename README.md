@@ -5,7 +5,7 @@ Prometheus exporter for exposing ipa-healthcheck metrics. It's essentially a wra
 
 ## Prerequisites
 
- * Freeipa 4.8.0 at least, since this exporter uses the tool ["freeipa-healthcheck"](https://github.com/freeipa/freeipa-healthcheck).
+ * The tool ["freeipa-healthcheck"](https://github.com/freeipa/freeipa-healthcheck).
 
 ## Running
 
@@ -52,10 +52,23 @@ Usage of ./ipa-healthcheck_exporter:
 
 ## Exported Metrics
 
-| Metric Name                                         | Description                                                                     |
-| --------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `ipa_healthcheck_state`                             | State of a IPA healthcheck (1: active, 0: inactive)"                            |
-
+```
+# HELP ipa_cert_expiration Expiration date of the certificates in warning state (unix timestamp)
+# TYPE ipa_cert_expiration gauge
+ipa_cert_expiration{certificate_request_id="20200626075943"} 1.604761504e+09
+...
+# HELP ipa_dogtag_connectivity_check Check to verify dogtag basic connectivity. (1: success, 0: error)
+# TYPE ipa_dogtag_connectivity_check gauge
+ipa_dogtag_connectivity_check{ipahealthcheck="DogtagCertsConnectivityCheck"} 1
+# HELP ipa_replication_check Replication checks (1: success, 0: error)
+# TYPE ipa_replication_check gauge
+ipa_replication_check{ipahealthcheck="ReplicationConflictCheck"} 1
+# HELP ipa_service_state State of the services monitored by IPA healthcheck (1: running, 0: not running)
+# TYPE ipa_service_state gauge
+ipa_service_state{service="certmonger"} 1
+ipa_service_state{service="httpd"} 1
+...
+```
 
 ## Prometheus
 
@@ -98,3 +111,6 @@ When a check is in error you can rerun it on the server to have more information
 ```
 
 We currently have to use the --output-file option of the ipa-healthcheck command and a temp file to parse the checks otherwise some warnings are written on stdout alongside the json output.
+
+TODO :
+ * Our own direct scraping mechanism (via ipalib) to not be tied to ipa-healthcheck and better performance.
