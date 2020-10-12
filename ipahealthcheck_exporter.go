@@ -42,7 +42,7 @@ var (
 
 	ipahealthcheckCertExpirationDesc = prometheus.NewDesc(
 		"ipa_cert_expiration",
-		"Expiration date of the certificates in warning state (unix timestamp)",
+		"Expiration date of the certificates in warning or error state (unix timestamp)",
 		[]string{"certificate_request_id"}, nil,
 	)
 
@@ -138,7 +138,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 
 		if check.Source == "ipahealthcheck.ipa.certs" && check.Check == "IPACertmongerExpirationCheck" {
 
-			if check.Result == "WARNING" {
+			if check.Result == "WARNING" || check.Result == "ERROR" {
 
 				timestamp, err := time.Parse("20060102150405Z", check.Kw["expiration_date"].(string))
 

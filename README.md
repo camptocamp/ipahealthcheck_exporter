@@ -53,7 +53,7 @@ Usage of ./ipa-healthcheck_exporter:
 ## Exported Metrics
 
 ```
-# HELP ipa_cert_expiration Expiration date of the certificates in warning state (unix timestamp)
+# HELP ipa_cert_expiration Expiration date of the certificates in warning or error state (unix timestamp)
 # TYPE ipa_cert_expiration gauge
 ipa_cert_expiration{certificate_request_id="20200626075943"} 1.604761504e+09
 ...
