@@ -18,9 +18,10 @@ import (
 )
 
 var (
-	metricsPath        string
-	ipahealthcheckPath string
-	port               int
+	metricsPath           string
+	ipahealthcheckPath    string
+	ipahealthcheckLogPath string
+	port                  int
 
 	ipahealthcheckServiceStateDesc = prometheus.NewDesc(
 		"ipa_service_state",
@@ -47,11 +48,7 @@ var (
 	)
 
 	scrapedChecks = map[string]scrapedCheck{
-		"ipahealthcheck.meta.services": {
-			scrape:      true,
-			metricsDesc: ipahealthcheckServiceStateDesc,
-		},
-		"ipahealthcheck.ds.replication": {
+		"ReplicationConflictCheck": {
 			scrape:      true,
 			metricsDesc: ipahealthcheckReplicationCheckDesc,
 		},
@@ -75,12 +72,14 @@ type scrapedCheck struct {
 }
 
 type ipahealthcheckCollector struct {
-	ipahealthcheckPath string
+	ipahealthcheckPath    string
+	ipahealthcheckLogPath string
 }
 
 func init() {
 	flag.StringVar(&metricsPath, "metrics-path", "/metrics", "Path under which to expose the metrics.")
-	flag.StringVar(&ipahealthcheckPath, "ipahealthcheck-path", "/usr/bin/ipa-healthcheck", "Path to the ipa-healthcheck tool.")
+	flag.StringVar(&ipahealthcheckPath, "ipahealthcheck-path", "/usr/bin/ipa-healthcheck", "Path to the ipa-healthcheck binary.")
+	flag.StringVar(&ipahealthcheckLogPath, "ipahealthcheck-log-path", "/var/log/ipa/healthcheck/healthcheck.log", "Path to the ipa-healthcheck log file.")
 	flag.IntVar(&port, "port", 9888, "Port on which to expose metrics.")
 }
 
@@ -100,32 +99,47 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 		log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
 	}
 
-	err = exec.Command(ic.ipahealthcheckPath, "--output-file", tmpFile.Name()).Run()
+	cmd := exec.Command(ic.ipahealthcheckPath, "--source", "ipahealthcheck.meta.services", "--output-file", tmpFile.Name())
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 	if err != nil {
 		log.Infof("ipa-healthcheck tool returned errors: %v", err)
 	}
 
 	jsonChecksOutput, err := ioutil.ReadFile(tmpFile.Name())
 	if err != nil {
-		log.Fatal("Cannot read checks from ipa-healthcheck tool: ", err)
+		log.Fatal("Cannot read file from ipa-healthcheck tool: ", err)
+		os.Exit(1)
 	}
 
 	err = json.Unmarshal(jsonChecksOutput, &checks)
 	if err != nil {
-		log.Fatal("Cannot unmarshal checks from ipa-healthcheck tool: ", err)
+		log.Fatal("Cannot unmarshal json from ipa-healthcheck output: ", err)
 		os.Exit(1)
 	}
 
 	for _, check := range checks {
 
-		if scrapedChecks[check.Source].scrape {
-
-			if check.Result == "SUCCESS" {
-				ch <- prometheus.MustNewConstMetric(scrapedChecks[check.Source].metricsDesc, prometheus.GaugeValue, 1.0, check.Check)
-			} else {
-				ch <- prometheus.MustNewConstMetric(scrapedChecks[check.Source].metricsDesc, prometheus.GaugeValue, 0.0, check.Check)
-			}
+		if check.Result == "SUCCESS" {
+			ch <- prometheus.MustNewConstMetric(ipahealthcheckServiceStateDesc, prometheus.GaugeValue, 1.0, check.Check)
+		} else {
+			ch <- prometheus.MustNewConstMetric(ipahealthcheckServiceStateDesc, prometheus.GaugeValue, 0.0, check.Check)
 		}
+	}
+
+	log.Infof("Scraping metrics from %v", ic.ipahealthcheckLogPath)
+
+	jsonChecksOutput, err = ioutil.ReadFile(ic.ipahealthcheckLogPath)
+	if err != nil {
+		log.Error("Cannot read ipa-healthcheck log file: ", err)
+	}
+
+	err = json.Unmarshal(jsonChecksOutput, &checks)
+	if err != nil {
+		log.Error("Cannot unmarshal json from ipa-healthcheck log file: ", err)
+	}
+
+	for _, check := range checks {
 
 		if scrapedChecks[check.Check].scrape {
 
@@ -177,7 +191,8 @@ func main() {
 	}()
 
 	collector := ipahealthcheckCollector{
-		ipahealthcheckPath: ipahealthcheckPath,
+		ipahealthcheckPath:    ipahealthcheckPath,
+		ipahealthcheckLogPath: ipahealthcheckLogPath,
 	}
 
 	registry := prometheus.NewPedanticRegistry()
