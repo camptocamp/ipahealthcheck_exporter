@@ -5,7 +5,7 @@ Prometheus exporter for exposing ipa-healthcheck metrics. It's essentially a wra
 
 ## Prerequisites
 
- * The tool ["freeipa-healthcheck"](https://github.com/freeipa/freeipa-healthcheck).
+ * The tool ["freeipa-healthcheck"](https://github.com/freeipa/freeipa-healthcheck) with the provided systemd timer enabled.
 
 ## Running
 
