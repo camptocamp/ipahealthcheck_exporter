@@ -13,13 +13,13 @@ jobs:
       with:
         go-version: 1.16.x
     - name: Build project
-      run: go build -o 389ds_exporter -v .
+      run: go build -o ipahealthcheck_exporter -v .
     - name: Release binary
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: |
-          389ds_exporter
+          ipahealthcheck_exporter
           LICENSE
           README.md
