@@ -1,3 +1,0 @@
-archives:
-  - wrap_in_directory: true
-    name_template: "{{ .ProjectName }}-{{ .Version }}.{{ .Os }}-{{ .Arch }}"
