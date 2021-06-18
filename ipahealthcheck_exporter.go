@@ -48,7 +48,7 @@ var (
 	)
 
 	scrapedChecks = map[string]scrapedCheck{
-		"ReplicationConflictCheck": {
+		"ReplicationCheck": {
 			scrape:      true,
 			metricsDesc: ipahealthcheckReplicationCheckDesc,
 		},
