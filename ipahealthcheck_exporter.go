@@ -22,6 +22,7 @@ var (
 	ipahealthcheckPath    string
 	ipahealthcheckLogPath string
 	port                  int
+	sudo                  bool
 
 	ipahealthcheckServiceStateDesc = prometheus.NewDesc(
 		"ipa_service_state",
@@ -81,6 +82,7 @@ func init() {
 	flag.StringVar(&ipahealthcheckPath, "ipahealthcheck-path", "/usr/bin/ipa-healthcheck", "Path to the ipa-healthcheck binary.")
 	flag.StringVar(&ipahealthcheckLogPath, "ipahealthcheck-log-path", "/var/log/ipa/healthcheck/healthcheck.log", "Path to the ipa-healthcheck log file.")
 	flag.IntVar(&port, "port", 9888, "Port on which to expose metrics.")
+	flag.BoolVar(&sudo, "sudo", false, "Use privilege escalation to run the health checks")
 }
 
 func (ic ipahealthcheckCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -99,7 +101,12 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 		log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
 	}
 
-	cmd := exec.Command(ic.ipahealthcheckPath, "--source", "ipahealthcheck.meta.services", "--output-file", tmpFile.Name())
+	healthCheckCmd := []string{ic.ipahealthcheckPath, "--source", "ipahealthcheck.meta.services", "--output-file", tmpFile.Name()}
+	if sudo {
+		healthCheckCmd = append([]string{"sudo"}, healthCheckCmd...)
+		log.Info("using sudo to execute health check")
+		}
+	cmd := exec.Command(healthCheckCmd[0], healthCheckCmd[1:]...)
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
