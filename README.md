@@ -48,6 +48,8 @@ Usage of ./ipa-healthcheck_exporter:
     	Path under which to expose metrics. (default "/metrics")
   -port int
     	Port on which to expose metrics. (default 9888)
+  -sudo
+	Use privilege escalation to run the health checks
 ```
 
 ## Exported Metrics
