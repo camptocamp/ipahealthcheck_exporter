@@ -53,7 +53,11 @@ var (
 			scrape:      true,
 			metricsDesc: ipahealthcheckReplicationCheckDesc,
 		},
-		"ipahealthcheck.ds.replication": {
+		"ReplicationChangelogCheck": {
+                        scrape:      true,
+                        metricsDesc: ipahealthcheckReplicationCheckDesc,
+                },
+		"ReplicationCheck": {
                         scrape:      true,
                         metricsDesc: ipahealthcheckReplicationCheckDesc,
                 },
