@@ -53,6 +53,14 @@ var (
 			scrape:      true,
 			metricsDesc: ipahealthcheckReplicationCheckDesc,
 		},
+		"ReplicationChangelogCheck": {
+                        scrape:      true,
+                        metricsDesc: ipahealthcheckReplicationCheckDesc,
+                },
+		"ReplicationCheck": {
+                        scrape:      true,
+                        metricsDesc: ipahealthcheckReplicationCheckDesc,
+                },
 		"DogtagCertsConnectivityCheck": {
 			scrape:      true,
 			metricsDesc: ipahealthcheckDogtagCheckDesc,
