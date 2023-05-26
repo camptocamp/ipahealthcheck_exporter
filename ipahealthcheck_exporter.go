@@ -54,13 +54,13 @@ var (
 			metricsDesc: ipahealthcheckReplicationCheckDesc,
 		},
 		"ReplicationChangelogCheck": {
-                        scrape:      true,
-                        metricsDesc: ipahealthcheckReplicationCheckDesc,
-                },
+			scrape:      true,
+			metricsDesc: ipahealthcheckReplicationCheckDesc,
+		},
 		"ReplicationCheck": {
-                        scrape:      true,
-                        metricsDesc: ipahealthcheckReplicationCheckDesc,
-                },
+			scrape:      true,
+			metricsDesc: ipahealthcheckReplicationCheckDesc,
+		},
 		"DogtagCertsConnectivityCheck": {
 			scrape:      true,
 			metricsDesc: ipahealthcheckDogtagCheckDesc,
@@ -113,7 +113,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	if sudo {
 		healthCheckCmd = append([]string{"sudo"}, healthCheckCmd...)
 		log.Info("using sudo to execute health check")
-		}
+	}
 	cmd := exec.Command(healthCheckCmd[0], healthCheckCmd[1:]...)
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
