@@ -21,6 +21,7 @@ var (
 	metricsPath           string
 	ipahealthcheckPath    string
 	ipahealthcheckLogPath string
+	address               string
 	port                  int
 	sudo                  bool
 
@@ -54,13 +55,13 @@ var (
 			metricsDesc: ipahealthcheckReplicationCheckDesc,
 		},
 		"ReplicationChangelogCheck": {
-                        scrape:      true,
-                        metricsDesc: ipahealthcheckReplicationCheckDesc,
-                },
+			scrape:      true,
+			metricsDesc: ipahealthcheckReplicationCheckDesc,
+		},
 		"ReplicationCheck": {
-                        scrape:      true,
-                        metricsDesc: ipahealthcheckReplicationCheckDesc,
-                },
+			scrape:      true,
+			metricsDesc: ipahealthcheckReplicationCheckDesc,
+		},
 		"DogtagCertsConnectivityCheck": {
 			scrape:      true,
 			metricsDesc: ipahealthcheckDogtagCheckDesc,
@@ -89,6 +90,7 @@ func init() {
 	flag.StringVar(&metricsPath, "metrics-path", "/metrics", "Path under which to expose the metrics.")
 	flag.StringVar(&ipahealthcheckPath, "ipahealthcheck-path", "/usr/bin/ipa-healthcheck", "Path to the ipa-healthcheck binary.")
 	flag.StringVar(&ipahealthcheckLogPath, "ipahealthcheck-log-path", "/var/log/ipa/healthcheck/healthcheck.log", "Path to the ipa-healthcheck log file.")
+	flag.StringVar(&address, "address", "0.0.0.0", "Address on which to expose metrics.")
 	flag.IntVar(&port, "port", 9888, "Port on which to expose metrics.")
 	flag.BoolVar(&sudo, "sudo", false, "Use privilege escalation to run the health checks")
 }
@@ -113,7 +115,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	if sudo {
 		healthCheckCmd = append([]string{"sudo"}, healthCheckCmd...)
 		log.Info("using sudo to execute health check")
-		}
+	}
 	cmd := exec.Command(healthCheckCmd[0], healthCheckCmd[1:]...)
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -233,9 +235,9 @@ func main() {
 		}
 	})
 
-	log.Infof("ipa-healthcheck exporter listening on http://0.0.0.0:%d\n", port)
+	log.Infof("ipa-healthcheck exporter listening on http://%v:%d\n", address, port)
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("%v:%d", address, port), nil); err != nil {
 		log.Fatal(err)
 	}
 }
