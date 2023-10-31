@@ -41,15 +41,20 @@ The following arguments are supported :
 
 ```sh
 # ./ipa-healthcheck_exporter -h
-Usage of ./ipa-healthcheck_exporter:
+Usage of ./ipahealthcheck_exporter:
+  -address string
+    	Address on which to expose metrics. (default "0.0.0.0")
+  -ipahealthcheck-log-path string
+    	Path to the ipa-healthcheck log file. (default "/var/log/ipa/healthcheck/healthcheck.log")
   -ipahealthcheck-path string
-    	Path to the ipa-healthcheck tool. (default "/usr/bin/ipa-healthcheck")
+    	Path to the ipa-healthcheck binary. (default "/usr/bin/ipa-healthcheck")
   -metrics-path string
-    	Path under which to expose metrics. (default "/metrics")
+    	Path under which to expose the metrics. (default "/metrics")
   -port int
     	Port on which to expose metrics. (default 9888)
   -sudo
-	Use privilege escalation to run the health checks
+    	Use privilege escalation to run the health checks
+  -v	Verbose mode (print more logs)
 ```
 
 ## Exported Metrics

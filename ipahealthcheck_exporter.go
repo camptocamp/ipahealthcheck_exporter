@@ -24,6 +24,7 @@ var (
 	address               string
 	port                  int
 	sudo                  bool
+	verbose               bool
 
 	ipahealthcheckServiceStateDesc = prometheus.NewDesc(
 		"ipa_service_state",
@@ -93,6 +94,7 @@ func init() {
 	flag.StringVar(&address, "address", "0.0.0.0", "Address on which to expose metrics.")
 	flag.IntVar(&port, "port", 9888, "Port on which to expose metrics.")
 	flag.BoolVar(&sudo, "sudo", false, "Use privilege escalation to run the health checks")
+	flag.BoolVar(&verbose, "v", false, "Verbose mode (print more logs)")
 }
 
 func (ic ipahealthcheckCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -137,6 +139,10 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, check := range checks {
 
+		if verbose {
+			log.Debugf("Found check from cmd : %v = %v\n", check.Check, check.Result)
+		}
+
 		if check.Result == "SUCCESS" {
 			ch <- prometheus.MustNewConstMetric(ipahealthcheckServiceStateDesc, prometheus.GaugeValue, 1.0, check.Check)
 		} else {
@@ -158,6 +164,9 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, check := range checks {
 
+		if verbose {
+			log.Debugf("Found check from logfile : %v = %v\n", check.Check, check.Result)
+		}
 		if scrapedChecks[check.Check].scrape {
 
 			if check.Result == "SUCCESS" {
