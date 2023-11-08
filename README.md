@@ -12,7 +12,7 @@ Prometheus exporter for exposing ipa-healthcheck metrics. It's essentially a wra
 You can run the exporter locally :
 
 ```sh
-# ./ipa-healthcheck_exporter 
+# ./ipa-healthcheck_exporter
 INFO[0000] ipa-healthcheck exporter listening on http://0.0.0.0:9888  source="ipahealthcheck_exporter.go:139"
 ```
 
@@ -106,7 +106,7 @@ for: 5m
 labels:
   severity: error
 annotations:
-  description: A IPA healthcheck is in error state : ( {{ $labels.source }} / {{ $labels.check }} )" 
+  description: A IPA healthcheck is in error state : ( {{ $labels.source }} / {{ $labels.check }} )"
 ```
 
 ## Misc
@@ -121,3 +121,4 @@ We currently have to use the --output-file option of the ipa-healthcheck command
 
 TODO :
  * Our own direct scraping mechanism (via ipalib) to not be tied to ipa-healthcheck and better performance.
+ * Use prometheus/common/promlog package for logging handling.

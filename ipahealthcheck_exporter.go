@@ -139,7 +139,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, check := range checks {
 
 		if verbose {
-			log.Debugf("Found check from cmd : %v = %v\n", check.Check, check.Result)
+			log.Infof("Found check from cmd : %v = %v\n", check.Check, check.Result)
 		}
 
 		if check.Result == "SUCCESS" {
@@ -163,10 +163,11 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, check := range checks {
 
-		if verbose {
-			log.Debugf("Found check from logfile : %v = %v\n", check.Check, check.Result)
-		}
 		if scrapedChecks[check.Check].scrape {
+
+			if verbose {
+				log.Infof("scrape=true -> add metric : %v", check)
+			}
 
 			if check.Result == "SUCCESS" {
 				ch <- prometheus.MustNewConstMetric(scrapedChecks[check.Check].metricsDesc, prometheus.GaugeValue, 1.0, check.Check)
