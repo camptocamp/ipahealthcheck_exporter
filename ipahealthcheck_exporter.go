@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -108,7 +107,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Infof("Scraping metrics from %v", ic.ipahealthcheckPath)
 
 	var checks []ipaCheck
-	tmpFile, err := ioutil.TempFile("/dev/shm", "ipa-healthcheck.out")
+	tmpFile, err := os.CreateTemp("/dev/shm", "ipa-healthcheck.out")
 	if err != nil {
 		log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
 	}
@@ -125,7 +124,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 		log.Infof("ipa-healthcheck tool returned errors: %v", err)
 	}
 
-	jsonChecksOutput, err := ioutil.ReadFile(tmpFile.Name())
+	jsonChecksOutput, err := os.ReadFile(tmpFile.Name())
 	if err != nil {
 		log.Fatal("Cannot read file from ipa-healthcheck tool: ", err)
 		os.Exit(1)
@@ -152,7 +151,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 
 	log.Infof("Scraping metrics from %v", ic.ipahealthcheckLogPath)
 
-	jsonChecksOutput, err = ioutil.ReadFile(ic.ipahealthcheckLogPath)
+	jsonChecksOutput, err = os.ReadFile(ic.ipahealthcheckLogPath)
 	if err != nil {
 		log.Error("Cannot read ipa-healthcheck log file: ", err)
 	}
