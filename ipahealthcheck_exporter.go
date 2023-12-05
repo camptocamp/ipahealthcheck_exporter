@@ -44,6 +44,12 @@ var (
 		[]string{"ipahealthcheck", "result"}, nil,
 	)
 
+	ipahealthcheckReplicationDesc = prometheus.NewDesc(
+		"ipa_replication",
+		"Replication heatlh (1: success, 0: error)",
+		[]string{"ipahealthcheck", "result", "message"}, nil,
+	)
+
 	ipahealthcheckCertExpirationDesc = prometheus.NewDesc(
 		"ipa_cert_expiration",
 		"Expiration date of the certificates in warning or error state (unix timestamp)",
@@ -56,10 +62,6 @@ var (
 			metricsDesc: ipahealthcheckReplicationCheckDesc,
 		},
 		"ReplicationChangelogCheck": {
-			scrape:      true,
-			metricsDesc: ipahealthcheckReplicationCheckDesc,
-		},
-		"ReplicationCheck": {
 			scrape:      true,
 			metricsDesc: ipahealthcheckReplicationCheckDesc,
 		},
@@ -101,6 +103,7 @@ func (ic ipahealthcheckCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- ipahealthcheckServiceStateDesc
 	ch <- ipahealthcheckDogtagCheckDesc
 	ch <- ipahealthcheckReplicationCheckDesc
+	ch <- ipahealthcheckReplicationDesc
 	ch <- ipahealthcheckCertExpirationDesc
 }
 
@@ -167,7 +170,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 		if scrapedChecks[check.Check].scrape {
 
 			if verbose {
-				log.Infof("scrape=true -> add metric : %v", check)
+				log.Infof("scraped check -> add metric : %v", check.Check)
 			}
 
 			if check.Result == "SUCCESS" {
@@ -177,7 +180,32 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 			}
 		}
 
+		if check.Check == "ReplicationCheck" {
+			message := "nil"
+
+			if verbose {
+				log.Infof("custom check -> add metric : %v", check.Check)
+			}
+
+			if check.Kw["msg"] != nil {
+				if verbose {
+					log.Infof("msg detected in check -> add to the metric as label : %v", check.Kw["msg"])
+				}
+				message = check.Kw["msg"].(string)
+			}
+
+			if check.Result == "SUCCESS" {
+				ch <- prometheus.MustNewConstMetric(ipahealthcheckReplicationDesc, prometheus.GaugeValue, 1.0, check.Check, strings.ToLower(check.Result), message)
+			} else {
+				ch <- prometheus.MustNewConstMetric(ipahealthcheckReplicationDesc, prometheus.GaugeValue, 0.0, check.Check, strings.ToLower(check.Result), message)
+			}
+		}
+
 		if check.Source == "ipahealthcheck.ipa.certs" && check.Check == "IPACertmongerExpirationCheck" {
+
+			if verbose {
+				log.Infof("custom check -> add metric : %v", check.Check)
+			}
 
 			if check.Result == "WARNING" || check.Result == "ERROR" {
 
