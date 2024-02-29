@@ -18,6 +18,10 @@ import (
 )
 
 var (
+	version = "development" // override by goreleaser
+	commit  = "none"        // override by goreleaser
+	date    = "none"        // override by goreleaser
+
 	metricsPath           string
 	ipahealthcheckPath    string
 	ipahealthcheckLogPath string
@@ -271,6 +275,12 @@ func main() {
 			log.Infof("An error occured while writing http response: %v", err)
 		}
 	})
+
+	if date == "none" {
+		date = time.Now().String()
+	}
+
+	log.Infof("Running exporter version %s, commit %s, built at %s", version, commit, date)
 
 	log.Infof("ipa-healthcheck exporter listening on http://%v:%d\n", address, port)
 
