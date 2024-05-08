@@ -121,8 +121,13 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 	if sudo {
 		cmd := exec.Command("sudo chown root", tmpFile.Name())
-		cmd.Run()
-		log.Info("used sudo to change ownership of: ", tmpFile.Name())
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			log.Infof("ipa-healthcheck tool returned errors: %v", err)
+		} else {
+			log.Info("used sudo to change ownership of: ", tmpFile.Name())
+		}
 	}
 
 	healthCheckCmd := []string{ic.ipahealthcheckPath, "--source", "ipahealthcheck.meta.services", "--output-file", tmpFile.Name()}
