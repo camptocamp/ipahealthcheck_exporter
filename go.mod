@@ -1,4 +1,4 @@
-module github.com/camptocamp/ipahealthcheck_exporter
+module github.com/dmgeurts/ipahealthcheck_exporter
 
 go 1.13
 
