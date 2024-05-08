@@ -120,11 +120,13 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 		log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
 	}
 	if sudo {
-		cmd := exec.Command("sudo", "chown", "root", tmpFile.Name(), "&&", "sudo", "chmod", "+r", tmpFile.Name())
+		cmd := exec.Command("sudo", "chown", "root", tmpFile.Name())
+		cmd.Run()
+		cmd := exec.Command("sudo", "chmod", "+r", tmpFile.Name())
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()
 		if err != nil {
-			log.Infof("ipa-healthcheck tool returned errors: %v", err)
+			log.Infof("chmod returned errors: %v", err)
 		} else {
 			log.Info("used sudo to change ownership and permissions of: ", tmpFile.Name())
 		}
