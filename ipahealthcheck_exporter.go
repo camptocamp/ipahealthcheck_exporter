@@ -116,12 +116,13 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 
 	var checks []ipaCheck
 	tmpFile, err := os.CreateTemp("/dev/shm", "ipa-healthcheck.out")
+	if err != nil {
+		log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
+	}
 	if sudo {
 		cmd := exec.Command("sudo chown root", tmpFile.Name())
 		cmd.Run()
-	}
-	if err != nil {
-		log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
+		log.Info("used sudo to change ownership of: ", tmpFile.Name())
 	}
 
 	healthCheckCmd := []string{ic.ipahealthcheckPath, "--source", "ipahealthcheck.meta.services", "--output-file", tmpFile.Name()}
