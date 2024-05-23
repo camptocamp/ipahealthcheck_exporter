@@ -117,16 +117,20 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	var checks []ipaCheck
 	tmpFile, err := os.CreateTemp("/dev/shm", "ipa-healthcheck.out")
 	if err != nil {
-		log.Fatal("Cannot write ipa-healthcheck output for parsing: ", err)
+		log.Fatal("Cannot create tempfile: ", err)
 	}
 
 	healthCheckCmd := []string{ic.ipahealthcheckPath, "--source", "ipahealthcheck.meta.services", "--output-file", tmpFile.Name()}
 	if sudo {
 		healthCheckCmd = append([]string{"sudo"}, healthCheckCmd...)
-		log.Info("using sudo to execute health check")
 	}
 	cmd := exec.Command(healthCheckCmd[0], healthCheckCmd[1:]...)
 	cmd.Stderr = os.Stderr
+
+	if verbose {
+		log.Infof("Running command: %v", healthCheckCmd)
+	}
+
 	err = cmd.Run()
 	if err != nil {
 		log.Infof("ipa-healthcheck tool returned errors: %v", err)
@@ -147,7 +151,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, check := range checks {
 
 		if verbose {
-			log.Infof("Found check from cmd : %v = %v\n", check.Check, check.Result)
+			log.Infof("Found check from cmd: %v = %v\n", check.Check, check.Result)
 		}
 
 		if check.Result == "SUCCESS" {
@@ -174,7 +178,7 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 		if scrapedChecks[check.Check].scrape {
 
 			if verbose {
-				log.Infof("scraped check -> add metric : %v", check.Check)
+				log.Infof("scraped check -> add metric: %v", check.Check)
 			}
 
 			if check.Result == "SUCCESS" {
@@ -188,12 +192,12 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 			message := "nil"
 
 			if verbose {
-				log.Infof("custom check -> add metric : %v", check.Check)
+				log.Infof("custom check -> add metric: %v", check.Check)
 			}
 
 			if check.Kw["msg"] != nil {
 				if verbose {
-					log.Infof("msg detected in check -> add to the metric as label : %v", check.Kw["msg"])
+					log.Infof("msg detected in check -> add to the metric as label: %v", check.Kw["msg"])
 				}
 				message = check.Kw["msg"].(string)
 			}
@@ -207,16 +211,16 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 
 		if check.Source == "ipahealthcheck.ipa.certs" && check.Check == "IPACertmongerExpirationCheck" {
 
-			if verbose {
-				log.Infof("custom check -> add metric : %v", check.Check)
-			}
-
 			if check.Result == "WARNING" || check.Result == "ERROR" {
+
+				if verbose {
+					log.Infof("custom check -> add metric: %v", check.Check)
+				}
 
 				timestamp, err := time.Parse("20060102150405Z", check.Kw["expiration_date"].(string))
 
 				if err != nil {
-					log.Infof("A problem occured while getting the certificate expiration (request id : %v) : %v", check.Kw["key"].(string), err)
+					log.Infof("A problem occured while getting the certificate expiration (request id: %v) : %v", check.Kw["key"].(string), err)
 				} else {
 					ch <- prometheus.MustNewConstMetric(ipahealthcheckCertExpirationDesc, prometheus.GaugeValue, float64(timestamp.Unix()), check.Check, check.Kw["key"].(string), strings.ToLower(check.Result))
 				}
