@@ -89,6 +89,7 @@ type scrapedCheck struct {
 }
 
 type ipahealthcheckCollector struct {
+	exporterWorkdir       string
 	ipahealthcheckPath    string
 	ipahealthcheckLogPath string
 }
@@ -115,10 +116,12 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Infof("Scraping metrics from %v", ic.ipahealthcheckPath)
 
 	var checks []ipaCheck
-	tmpFile, err := os.CreateTemp("/dev/shm", "ipa-healthcheck.out")
+
+	tmpFile, err := os.CreateTemp(ic.exporterWorkdir, "ipa-healthcheck.out")
 	if err != nil {
 		log.Fatal("Cannot create tempfile: ", err)
 	}
+	defer os.Remove(tmpFile.Name())
 
 	healthCheckCmd := []string{ic.ipahealthcheckPath, "--source", "ipahealthcheck.meta.services", "--output-file", tmpFile.Name()}
 	if sudo {
@@ -227,13 +230,19 @@ func (ic ipahealthcheckCollector) Collect(ch chan<- prometheus.Metric) {
 			}
 		}
 	}
-
-	defer os.Remove(tmpFile.Name())
 }
 
 func main() {
 
 	flag.Parse()
+
+	workDir, err := os.MkdirTemp("/dev/shm", "ipa-healthcheck")
+	if err != nil {
+		log.Fatal("Cannot create: ", err)
+	}
+	if verbose {
+		log.Infof("Created temporary working directory: %v", workDir)
+	}
 
 	go func() {
 		intChan := make(chan os.Signal, 1)
@@ -245,14 +254,17 @@ func main() {
 		select {
 		case <-intChan:
 			log.Infof("Received SIGINT, exiting")
+			os.RemoveAll(workDir)
 			os.Exit(0)
 		case <-termChan:
 			log.Infof("Received SIGTERM, exiting")
+			os.RemoveAll(workDir)
 			os.Exit(0)
 		}
 	}()
 
 	collector := ipahealthcheckCollector{
+		exporterWorkdir:       workDir,
 		ipahealthcheckPath:    ipahealthcheckPath,
 		ipahealthcheckLogPath: ipahealthcheckLogPath,
 	}
