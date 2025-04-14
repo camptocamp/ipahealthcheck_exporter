@@ -90,23 +90,30 @@ The exporter labels are the following :
 
 ### Alerting rules
 
-Here are an example of two alerting rules to receive alerts when a check is in a bad state :
+Here are prometheus [alerting rules](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) examples:
 
 ```
-alert: IPAHealthcheckIsCritical
-expr: ipa_healthcheck_state{severity="critical"} == 1
-for: 5m
-labels:
-  severity: critical
-annotations:
-  description: "A IPA healthcheck is in critical state ( {{ $labels.source }} / {{ $labels.check }} )"
-alert: IPAHealthcheckIsError
-expr: ipa_healthcheck_state{severity="error"} == 1
-for: 5m
-labels:
-  severity: error
-annotations:
-  description: A IPA healthcheck is in error state : ( {{ $labels.source }} / {{ $labels.check }} )"
+- alert: IPAServiceDown
+  expr: ipa_service_state == 0
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    description: "The service {{ $labels.service }} is down on {{ $labels.certname }}"
+- alert: IPAHealthcheckFailed
+  expr: ipa_dogtag_connectivity_check == 0 or ipa_replication_check == 0
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    description: "The ipa healthcheck {{ $labels.ipahealthcheck }} failed on {{ $labels.certname }}"
+- alert: CertMongerCertificateExpiring
+  expr: ipa_cert_expiration - time() < 3600 * 24 * 20
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    description: "The certificate with ID {{ $labels.certificate_request_id }} should have been renewed on {{ $labels.certname }} but is expiring in less than 20 days."
 ```
 
 ## Misc
